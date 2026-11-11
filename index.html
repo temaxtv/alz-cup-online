@@ -273,21 +273,24 @@ input{min-width:0;width:100%}
   }
   function dotFor(parent,i){var d=el('span',{className:'dot'},parent);d.style.background=COLORS[i];d.style.color=COLORS[i];}
 
-  function buildTeams(){
-    var box=$('teams');
-    S.teams.forEach(function(t,i){
-      var c=el('div',{className:'card'},box);
-      var h=el('div',{className:'row'},c);
-      dotFor(h,i);
-      var n=el('input',{value:t.name,placeholder:'Nom de l’équipe'},h);
-      n.style.fontWeight='800';
-      var a=el('input',{value:t.p1,placeholder:'Joueur A'},c);a.style.marginTop='8px';
-      var b=el('input',{value:t.p2,placeholder:'Joueur B'},c);b.style.marginTop='6px';
-      n.oninput=function(){t.name=n.value;sync();};
-      a.oninput=function(){t.p1=a.value;sync();};
-      b.oninput=function(){t.p2=b.value;sync();};
-    });
-  }
+ function buildTeams(){
+  var box=$('teams');
+  box.innerHTML='';
+
+  S.teams.forEach(function(t,i){
+    var c=el('div',{className:'card'},box);
+    var h=el('div',{className:'row'},c);
+    dotFor(h,i);
+    var n=el('input',{value:t.name,placeholder:'Nom de l’équipe'},h);
+    var a=el('input',{value:t.p1,placeholder:'Joueur A'},c);
+    var b=el('input',{value:t.p2,placeholder:'Joueur B'},c);
+    b.style.marginTop='6px';
+
+    n.oninput=function(){t.name=n.value;sync();};
+    a.oninput=function(){t.p1=a.value;sync();};
+    b.oninput=function(){t.p2=b.value;sync();};
+  });
+}
  function buildSolo(){
   var b2=$('baremeSolo');
   b2.innerHTML='';
