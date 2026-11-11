@@ -608,6 +608,32 @@ body.alz-overlay #alz-live-overlay{display:block}
 body.alz-overlay.alz-vertical #alz-live-overlay{left:14px;top:14px;transform:none;width:clamp(220px,28vw,290px);padding:9px}
 body.alz-overlay.alz-vertical .alz-ov-brand{font-size:22px}
 @media(max-width:700px){#alz-live-overlay{left:10px;top:10px;width:min(260px,48vw);padding:8px}.alz-ov-row{grid-template-columns:23px minmax(0,1fr) auto;padding:6px 5px}.alz-ov-team{font-size:10px}.alz-ov-players{font-size:7px}.alz-ov-pts{font-size:14px}.alz-ov-ticker{margin:7px -8px -8px;padding:5px 0}}
+/* ALZ CUP : overlay transparent pour OBS */
+#alz-live-overlay {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.alz-ov-row {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.alz-ov-row:first-child {
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.alz-ov-ticker {
+  background: transparent !important;
+}
+
+.alz-ov-head {
+  border-bottom: none !important;
+}
 </style>
 <div id="alz-live-overlay" aria-label="Classement ALZ CUP en direct">
  <div class="alz-ov-head"><div class="alz-ov-brand">ALZ <span>CUP</span></div><div class="alz-ov-sub">Classement général<br>Week-end gaming</div></div>
