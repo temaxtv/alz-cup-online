@@ -159,11 +159,42 @@ input{min-width:0;width:100%}
   var S=def(), ready=false, saveTimer=null, applyingRemote=false;
   try{var cached=JSON.parse(localStorage.getItem(KEY));if(cached&&cached.teams&&cached.games)S=cached;}catch(e){}
   function normalizeState(value){
-    if(!value||!value.teams||!value.games)return def();
-    value.games.forEach(function(g){g.mode=g.mode||'place';g.bo=g.bo||3;g.scores=g.scores||[null,null,null,null];g.low=!!g.low;g.m=g.m||{};g.pair=g.pair||0;g.solo=!!g.solo;g.smode=g.smode||'place';g.sp=g.sp||z8();g.ss=g.ss||n8();});
-    if(!value.baremeSolo)value.baremeSolo=[10,8,6,5,4,3,2,1];
+    var base=def();
+
+    if(!value)value={};
+
+    if(!Array.isArray(value.teams))value.teams=[];
+
+    value.teams=[0,1,2,3].map(function(i){
+      var t=value.teams[i]||base.teams[i];
+      return {
+        name:t.name||base.teams[i].name,
+        p1:t.p1||base.teams[i].p1,
+        p2:t.p2||base.teams[i].p2
+      };
+    });
+
+    if(!Array.isArray(value.bareme))value.bareme=base.bareme;
+    if(!Array.isArray(value.baremeSolo))value.baremeSolo=base.baremeSolo;
+    if(!Array.isArray(value.games))value.games=base.games;
+
+    value.games.forEach(function(g){
+      g.mode=g.mode||'place';
+      g.bo=g.bo||3;
+      g.coef=g.coef||1;
+      g.places=g.places||[0,0,0,0];
+      g.scores=g.scores||[null,null,null,null];
+      g.low=!!g.low;
+      g.m=g.m||{};
+      g.pair=g.pair||0;
+      g.solo=!!g.solo;
+      g.smode=g.smode||'place';
+      g.sp=g.sp||z8();
+      g.ss=g.ss||n8();
+    });
+
     return value;
-  }
+}
   function save(){
     try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
     if(!ready||applyingRemote||!auth.currentUser)return;
