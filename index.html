@@ -501,7 +501,17 @@ input{min-width:0;width:100%}
   };
   window.ALZ_CUP_GET_STATE=function(){return {teams:S.teams,ranking:scores(),completed:S.games.filter(function(g){return derive(g).some(function(p){return p>0;});}).length};};
   window.ALZ_CUP_REFRESH_FROM_STORAGE=function(){try{var fresh=JSON.parse(localStorage.getItem(KEY));if(fresh&&fresh.teams&&fresh.games)S=fresh;}catch(e){}return window.ALZ_CUP_GET_STATE();};
-  function rebuild(){buildTeams();buildBareme();buildGames();sync();}
+  function rebuild(){
+  $('teams').innerHTML='';
+  $('bareme').innerHTML='';
+  $('baremeSolo').innerHTML='';
+  $('games').innerHTML='';
+
+  buildTeams();
+  buildBareme();
+  buildGames();
+  sync();
+}
   function showAdmin(user){
     document.getElementById('firebase-login').style.display=user?'none':'block';
     document.getElementById('firebase-admin-content').style.display=user?'block':'none';
