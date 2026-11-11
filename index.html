@@ -1,0 +1,71 @@
+
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ALZ CUP ONLINE</title>
+<style>
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: transparent;
+    font-family: Arial, sans-serif;
+    color: white;
+}
+
+.overlay {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    background: linear-gradient(110deg, #170d36, #102b50);
+    border: 1px solid #9b65ff;
+    border-radius: 10px;
+    box-shadow: 0 0 18px #793bff66;
+}
+
+.logo {
+    font-size: 17px;
+    font-weight: 900;
+    color: #c49aff;
+    letter-spacing: 1px;
+}
+
+.team {
+    font-size: 15px;
+    font-weight: bold;
+    min-width: 75px;
+    text-align: center;
+}
+
+.score {
+    font-size: 25px;
+    font-weight: 900;
+    color: #fff;
+    min-width: 25px;
+    text-align: center;
+}
+
+.separator {
+    color: #a78bfa;
+    font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+<div class="overlay">
+    <div class="logo">ALZ CUP</div>
+    <div class="team" id="team1">ÉQUIPE 1</div>
+    <div class="score" id="score1">0</div>
+    <div class="separator">-</div>
+    <div class="score" id="score2">0</div>
+    <div class="team" id="team2">ÉQUIPE 2</div>
+</div>
+</body>
+</html>
