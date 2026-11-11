@@ -3,69 +3,109 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ALZ CUP ONLINE</title>
+
 <style>
 * { box-sizing: border-box; }
 
 body {
-    margin: 0;
-    background: transparent;
-    font-family: Arial, sans-serif;
-    color: white;
+  margin: 0;
+  background: transparent;
+  font-family: Arial, sans-serif;
+  color: white;
 }
 
 .overlay {
-    position: absolute;
-    top: 20px;
-    left: 20px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 12px 20px;
-    background: linear-gradient(110deg, #170d36, #102b50);
-    border: 1px solid #9b65ff;
-    border-radius: 10px;
-    box-shadow: 0 0 18px #793bff66;
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 13px;
+  background: linear-gradient(110deg, #170d36, #102b50);
+  border: 1px solid #9b65ff;
+  border-radius: 9px;
+  box-shadow: 0 0 15px #793bff66;
 }
 
 .logo {
-    font-size: 17px;
-    font-weight: 900;
-    color: #c49aff;
-    letter-spacing: 1px;
+  color: #c49aff;
+  font-size: 14px;
+  font-weight: 900;
 }
 
 .team {
-    font-size: 15px;
-    font-weight: bold;
-    min-width: 75px;
-    text-align: center;
+  font-size: 12px;
+  font-weight: bold;
+  min-width: 65px;
+  text-align: center;
 }
 
 .score {
-    font-size: 25px;
-    font-weight: 900;
-    color: #fff;
-    min-width: 25px;
-    text-align: center;
+  font-size: 22px;
+  font-weight: 900;
+  min-width: 20px;
+  text-align: center;
 }
 
 .separator {
-    color: #a78bfa;
-    font-weight: bold;
+  color: #a78bfa;
+  font-weight: bold;
 }
 </style>
 </head>
 
 <body>
+
 <div class="overlay">
-    <div class="logo">ALZ CUP</div>
-    <div class="team" id="team1">ÉQUIPE 1</div>
-    <div class="score" id="score1">0</div>
-    <div class="separator">-</div>
-    <div class="score" id="score2">0</div>
-    <div class="team" id="team2">ÉQUIPE 2</div>
+  <div class="logo">ALZ CUP</div>
+  <div class="team" id="team1">ÉQUIPE 1</div>
+  <div class="score" id="score1">0</div>
+  <div class="separator">-</div>
+  <div class="score" id="score2">0</div>
+  <div class="team" id="team2">ÉQUIPE 2</div>
 </div>
+
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyDQ6ShueCtCdfOfpfnRxbR9ij12HVRV7Ec",
+  authDomain: "alz-cup-online-5.firebaseapp.com",
+  databaseURL: "https://alz-cup-online-5-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "alz-cup-online-5",
+  storageBucket: "alz-cup-online-5.firebasestorage.app",
+  messagingSenderId: "134697377243",
+  appId: "1:134697377243:web:8597b659e0ac74eb7a9bfe",
+  measurementId: "G-KCVLYB0E40"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const database = firebase.database();
+const matchRef = database.ref("match");
+
+matchRef.on("value", (snapshot) => {
+  const data = snapshot.val();
+
+  if (!data) return;
+
+  document.getElementById("team1").textContent =
+    data.team1 || "ÉQUIPE 1";
+
+  document.getElementById("team2").textContent =
+    data.team2 || "ÉQUIPE 2";
+
+  document.getElementById("score1").textContent =
+    Number(data.score1) || 0;
+
+  document.getElementById("score2").textContent =
+    Number(data.score2) || 0;
+});
+</script>
+
 </body>
 </html>
