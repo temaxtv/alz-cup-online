@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>ALZ CUP – Classement général</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Rubik:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -67,24 +70,43 @@ input{min-width:0;width:100%}
 .sum{color:var(--fg)}
 .chk{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:14px;color:var(--mut)}
 .chk input{width:auto}
-.tv .edit{display:none}
+.tv .edit,.ro .edit{display:none}
 .tv main{max-width:780px}
 .tv .rank{padding:20px 24px}
 .tv .tn{font-size:30px}.tv .pts{font-size:54px}.tv .pl{font-size:17px}.tv .pos{font-size:40px}
+#recap table{width:100%;border-collapse:collapse;font-size:14px}
+#recap th,#recap td{padding:6px 8px;text-align:center;border-bottom:1px solid rgba(166,60,255,.25)}
+#recap td:first-child,#recap th:first-child{text-align:left}
+#recap .mx{color:var(--yel);font-weight:800}
+.tv #players .pts{font-size:34px}
+.ttl{display:none;cursor:pointer;font-weight:800;padding:2px 0}
+.card.done .ttl{display:block}
+.card.done:not(.open)>*:not(.ttl):not(.sum){display:none}
+#flash{position:fixed;top:14px;left:50%;transform:translate(-50%,-160%);z-index:60;padding:12px 22px;border-radius:14px;background:linear-gradient(135deg,var(--pur),var(--mag));font-family:"Permanent Marker",cursive;font-size:22px;box-shadow:0 0 30px var(--mag);transition:transform .5s;text-align:center}
+#flash.on{transform:translate(-50%,0)}
+#conf{position:fixed;inset:0;pointer-events:none;overflow:hidden;z-index:55}
+#conf span{position:absolute;top:-40px;animation:fall 3s linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+#plan .pi{display:grid;grid-template-columns:88px 1fr;gap:12px;margin-bottom:10px}
+#plan .pt{border-radius:16px;border:1px solid var(--line);background:var(--card);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:8px 4px;font-family:"Permanent Marker",cursive;font-size:28px;line-height:1;text-shadow:0 0 12px var(--mag);font-variant-numeric:tabular-nums}
+#plan .pt small{font-family:"Rubik",sans-serif;font-size:11px;color:var(--mut);text-shadow:none;margin-top:6px;text-transform:uppercase;letter-spacing:.06em}
+#plan .pt.no{color:var(--mut);text-shadow:none}
+#plan .pc{border-radius:16px;border:1px solid var(--line);border-left:5px solid var(--pur);background:var(--card);padding:10px 14px;min-width:0}
+#plan .pn{font-weight:800;font-size:18px}
+#plan .pm{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+#plan .tg{font-size:12px;padding:2px 9px;border-radius:99px;border:1px solid var(--line);color:var(--mut)}
+#plan .tg.hot{color:var(--yel);border-color:var(--yel)}
+#plan .tg.ok{color:#7dffb0;border-color:rgba(125,255,176,.5)}
+#plan .pi.done{opacity:.6}
+#plan .pi.done .pc{border-left-color:#7dffb0}
+#plan .pi.next .pt,#plan .pi.next .pc{border-color:var(--yel);box-shadow:0 0 22px rgba(255,179,0,.35)}
+#plan .pi.next .pc{border-left-color:var(--yel)}
+.tv #plan .pi{grid-template-columns:120px 1fr}.tv #plan .pt{font-size:40px}.tv #plan .pn{font-size:26px}.tv #plan .tg{font-size:15px}
+details.bets{margin-top:10px;color:var(--mut);font-size:14px}details.bets summary{cursor:pointer}
 </style>
 </head>
 <body>
 <main>
-  <section id="firebase-login" class="card" style="max-width:460px;margin:18px auto;">
-    <h2 style="margin-top:0">Administration ALZ CUP</h2>
-    <p class="note">Connecte-toi pour modifier les équipes, les jeux et les scores. OBS reçoit les changements automatiquement.</p>
-    <label for="firebase-email">Adresse e-mail</label><input id="firebase-email" type="email" autocomplete="username" placeholder="Ton e-mail">
-    <label for="firebase-password">Mot de passe</label><input id="firebase-password" type="password" autocomplete="current-password" placeholder="Ton mot de passe">
-    <button id="firebase-login-btn">Se connecter</button>
-    <div id="firebase-message" class="warn" aria-live="polite"></div>
-  </section>
-  <div id="firebase-admin-content" style="display:none">
-  <div style="display:flex;justify-content:flex-end;gap:8px;align-items:center;margin:8px 0 14px"><span id="firebase-connected" class="note">Connecté</span><button id="firebase-logout" type="button">Déconnexion</button></div>
   <header class="hero">
     <div class="top">
       <div class="kicker">Un week-end inoubliable entre potes !</div>
@@ -95,13 +117,29 @@ input{min-width:0;width:100%}
     <div class="tag">Gaming · Fun · Live</div>
     <div class="tools">
       <button id="tvBtn">Mode TV</button>
+      <button id="shareBtn">📋 Copier le classement</button>
+      <button id="loginBtn">🔐 Admin</button>
       <button id="resetBtn" class="edit">Tout remettre à zéro</button>
+      <button id="rndBtn" class="edit">🎲 Équipes au sort</button>
+      <button id="undoBtn" class="edit">↩ Annuler</button>
     </div>
+    <div class="note" id="net" style="text-align:center">⚪ Hors ligne (local)</div>
   </header>
 
-  <h2>Classement</h2>
-  <div id="ranking"></div>
-  <div class="note">Égalité : on départage au nombre de victoires, puis au résultat du dernier jeu joué.</div>
+  <h2 data-s="0">Classement</h2>
+  <div class="note" data-s="0" id="bandeau" style="margin:0 0 10px"></div>
+  <div class="note" data-s="0" id="champ" style="margin:0 0 10px;color:var(--yel);font-weight:600"></div>
+  <div data-s="0" id="ranking"></div>
+  <div class="note" data-s="0">Égalité : on départage au nombre de victoires, puis au résultat du dernier jeu joué.</div>
+  <h2 data-s="1">Joueurs · MVP (jeux solo)</h2>
+  <div class="grid4" data-s="1" id="players"></div>
+  <h2 data-s="2">Évolution des points</h2>
+  <div class="card" data-s="2" id="chart"></div>
+  <h2 data-s="3">Récapitulatif par jeu</h2>
+  <div class="card" data-s="3" style="overflow-x:auto" id="recap"></div>
+
+  <h2 data-s="4">Planning</h2>
+  <div data-s="4" id="plan"></div>
 
   <div class="edit">
     <h2>Équipes</h2>
@@ -113,16 +151,14 @@ input{min-width:0;width:100%}
     <div class="card bareme" id="baremeSolo"></div>
   </div>
 
-  <h2 class="edit">Jeux</h2>
+  <div class="edit card row" id="focusBar" style="justify-content:space-between;flex-wrap:wrap;margin-top:30px"><button id="focusTog"></button><button id="fPrev">◀</button><b id="focusLbl"></b><button id="fNext">Jeu suivant ▶</button></div>
+  <h2 class="edit" style="margin-top:14px">Jeux</h2>
   <div class="games edit" id="games"></div>
   <div class="edit" style="margin-top:14px;text-align:center"><button id="addBtn" style="background:linear-gradient(135deg,var(--pur),var(--mag));border:0;font-weight:600;padding:10px 22px;box-shadow:0 0 18px rgba(166,60,255,.6)">＋ Ajouter un jeu</button></div>
   <div class="foot">Jeux, rire, partage…<b>tout le week-end !</b></div>
-  </div>
 </main>
+<div id="flash"></div><div id="conf"></div>
 
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <script>
 (function(){
   var KEY='zlan-v1';
@@ -144,63 +180,49 @@ input{min-width:0;width:100%}
       games:g.map(function(x){return {name:x[0],mode:x[1],coef:x[2],bo:x[3],places:[0,0,0,0],scores:[null,null,null,null],low:x[0]==='Trackmania',m:{},pair:0,solo:SOLO.indexOf(x[0])>=0,smode:x[0]==='Trackmania'?'score':'place',sp:z8(),ss:n8()};})
     };
   }
-  var firebaseConfig = {
-    apiKey: "AIzaSyDQ6ShueCtCdfOfpfnRxbR9ij12HVRV7Ec",
-    authDomain: "alz-cup-online-5.firebaseapp.com",
-    databaseURL: "https://alz-cup-online-5-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "alz-cup-online-5",
-    storageBucket: "alz-cup-online-5.firebasestorage.app",
-    messagingSenderId: "134697377243",
-    appId: "1:134697377243:web:8597b659e0ac74eb7a9bfe",
-    measurementId: "G-KCVLYB0E40"
-  };
-  if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-  var auth=firebase.auth(), db=firebase.database(), stateRef=db.ref('alzCupState');
-  var S=def(), ready=false, saveTimer=null, applyingRemote=false;
-  try{var cached=JSON.parse(localStorage.getItem(KEY));if(cached&&cached.teams&&cached.games)S=cached;}catch(e){}
-  function normalizeState(value){
-    var base=def();
-
-    if(!value)value={};
-
-    if(!Array.isArray(value.teams))value.teams=[];
-
-    value.teams=[0,1,2,3].map(function(i){
-      var t=value.teams[i]||base.teams[i];
-      return {
-        name:t.name||base.teams[i].name,
-        p1:t.p1||base.teams[i].p1,
-        p2:t.p2||base.teams[i].p2
-      };
-    });
-
-    if(!Array.isArray(value.bareme))value.bareme=base.bareme;
-    if(!Array.isArray(value.baremeSolo))value.baremeSolo=base.baremeSolo;
-    if(!Array.isArray(value.games))value.games=base.games;
-
-    value.games.forEach(function(g){
-      g.mode=g.mode||'place';
-      g.bo=g.bo||3;
-      g.coef=g.coef||1;
-      g.places=g.places||[0,0,0,0];
-      g.scores=g.scores||[null,null,null,null];
-      g.low=!!g.low;
-      g.m=g.m||{};
-      g.pair=g.pair||0;
-      g.solo=!!g.solo;
-      g.smode=g.smode||'place';
-      g.sp=g.sp||z8();
-      g.ss=g.ss||n8();
-    });
-
-    return value;
-}
-  function save(){
-    try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
-    if(!ready||applyingRemote||!auth.currentUser)return;
-    clearTimeout(saveTimer);
-    saveTimer=setTimeout(function(){stateRef.set(S).then(function(){var m=document.getElementById('firebase-message');if(m)m.textContent='Synchronisé avec Firebase ✓';}).catch(function(err){var m=document.getElementById('firebase-message');if(m)m.textContent='Erreur Firebase : '+err.message;});},350);
+  var S;
+  try{ S=JSON.parse(localStorage.getItem(KEY)); }catch(e){ S=null; }
+  if(!S||!S.teams||!S.games) S=def();
+  
+  function norm(){S.games.forEach(function(g){g.id=g.id||uid();g.bets=g.bets||[-1,-1,-1,-1];g.time=g.time||'';g.mode=g.mode||'place';g.bo=g.bo||3;g.scores=g.scores||[null,null,null,null];g.low=!!g.low;g.m=g.m||{};g.pair=g.pair||0;g.joker=g.joker==null?-1:g.joker;g.solo=!!g.solo;g.smode=g.smode||'place';g.sp=g.sp||z8();g.ss=g.ss||n8();});
+  if(!S.baremeSolo)S.baremeSolo=[10,8,6,5,4,3,2,1];S.cur=S.cur||0;S.teams.forEach(function(t,i){if(t.emoji==null)t.emoji=['🦊','🐺','🦄','🐲'][i];});}
+  norm();
+  var col=null,ready=false,known={},timer=null,applying=false;
+  function uid(){return 'g'+Math.random().toString(36).slice(2,8)+Date.now().toString(36).slice(-3);}
+  function setNet(t){var n=document.getElementById('net');if(n)n.textContent=t;}
+  function okTxt(){return document.body.classList.contains('ro')?'👀 En direct (lecture seule)':'🟢 En direct · synchronisé';}
+  function docsOf(){
+    var o={meta:JSON.stringify({teams:S.teams,cur:S.cur||0,bareme:S.bareme,baremeSolo:S.baremeSolo,order:S.games.map(function(g){return g.id;})})};
+    S.games.forEach(function(g){o['g_'+g.id]=JSON.stringify(g);});
+    return o;
   }
+  function push(){
+    if(!col||!ready)return;
+    var want=docsOf();
+    Object.keys(want).forEach(function(k){
+      if(known[k]===want[k])return;
+      var prev=known[k];known[k]=want[k];
+      col.doc(k).set({json:want[k]}).then(function(){setNet(okTxt());},function(){known[k]=prev;setNet('🟠 Synchro impossible (lecture seule ?)');});
+    });
+    Object.keys(known).forEach(function(k){
+      if(k!=='meta'&&!want[k]){delete known[k];col.doc(k).delete().catch(function(){});}
+    });
+  }
+  var hist=[],lastSnap=null,lastT=0,undoing=false,focusMode=true;
+  function save(){
+    var j=JSON.stringify(S);
+    try{ localStorage.setItem(KEY,j); }catch(e){}
+    if(!applying&&!undoing){ if(lastSnap===null)lastSnap=j; else if(j!==lastSnap){ if(Date.now()-lastT>800){hist.push(lastSnap);if(hist.length>30)hist.shift();} lastSnap=j;lastT=Date.now(); } } else lastSnap=j;
+    if(col&&ready&&!applying){clearTimeout(timer);timer=setTimeout(push,300);}
+  }
+  function keepFocus(fn){
+    var q='input,select',list=Array.prototype.slice.call(document.querySelectorAll(q)),a=document.activeElement,i=list.indexOf(a),st=null,en=null;
+    try{st=a.selectionStart;en=a.selectionEnd;}catch(e){}
+    fn();
+    if(i>=0){var n=document.querySelectorAll(q)[i];if(n){n.focus();try{if(st!=null)n.setSelectionRange(st,en);}catch(e){}}}
+  }
+  function twice(btn,label,fn){var t=null,orig=btn.textContent;btn.onclick=function(){if(t){clearTimeout(t);t=null;btn.textContent=orig;fn();}else{btn.textContent=label;t=setTimeout(function(){t=null;btn.textContent=orig;},3000);}};}
+  function rebuildAll(){buildTeams();buildBareme();buildGames();sync();}
   function $(id){return document.getElementById(id);}
   function el(tag,attrs,parent){var e=document.createElement(tag);for(var k in attrs){if(k==='text')e.textContent=attrs[k];else e[k]=attrs[k];}if(parent)parent.appendChild(e);return e;}
 
@@ -268,7 +290,9 @@ input{min-width:0;width:100%}
   function soloPts(g,p){var q=soloPl(g)[p];return q>0?(Number(S.baremeSolo[q-1])||0)*g.coef:0;}
   function soloTeamPts(g,t){return soloPts(g,2*t)+soloPts(g,2*t+1);}
   function pname(p){return S.teams[p>>1][p%2?'p2':'p1'];}
-  function gamePts(g,t){if(g.solo)return soloTeamPts(g,t);var p=derive(g)[t];return p>0?(Number(S.bareme[p-1])||0)*g.coef:0;}
+  function gamePts(g,t){var b=g.solo?soloTeamPts(g,t):(function(){var p=derive(g)[t];return p>0?(Number(S.bareme[p-1])||0)*g.coef:0;})();return g.joker===t?b*2:b;}
+  var BET=2;
+  function betPts(g,t){var pl=derive(g);return (g.bets&&g.bets[t]>=0&&pl[g.bets[t]]===1)?BET:0;}
   function scores(){
     var res=S.teams.map(function(t,i){return {i:i,total:0,wins:0,last:0};});
     var lastIdx=-1;
@@ -276,7 +300,7 @@ input{min-width:0;width:100%}
     S.games.forEach(function(g,gi){
       var pl=derive(g);
       res.forEach(function(r){
-        r.total+=gamePts(g,r.i);
+        r.total+=gamePts(g,r.i)+betPts(g,r.i);
         if(pl[r.i]===1)r.wins++;
         if(gi===lastIdx)r.last=gamePts(g,r.i);
       });
@@ -285,32 +309,72 @@ input{min-width:0;width:100%}
   }
 
   /* ---------- affichage ---------- */
+var prevPts={},prevLead,celebrateOK=false;setTimeout(function(){celebrateOK=true;},2500);
+  function countUp(n,a,b){if(a==null||a===b||!window.requestAnimationFrame)return;var t0=null;function f(ts){if(t0===null)t0=ts;var p=Math.min(1,(ts-t0)/700);n.textContent=Math.round(a+(b-a)*p)+' pts';if(p<1)window.requestAnimationFrame(f);}window.requestAnimationFrame(f);}
+  function flip(row,oldTop){try{if(oldTop==null)return;var d=oldTop-row.getBoundingClientRect().top;if(!d)return;row.style.transition='none';row.style.transform='translateY('+d+'px)';window.requestAnimationFrame(function(){window.requestAnimationFrame(function(){row.style.transition='transform .6s ease';row.style.transform='';});});}catch(e){}}
+  function celebrate(i,msg){
+    var f=$('flash');f.textContent=msg||('👑 '+S.teams[i].name+' prend la tête !');f.className='on';setTimeout(function(){f.className='';},4000);
+    var c=$('conf');c.innerHTML='';var em=['🎉','✨','👑','🎊'];
+    for(var k=0;k<36;k++){var s=el('span',{text:em[k%4]},c);s.style.left=(Math.random()*100)+'vw';s.style.animationDelay=(Math.random()*1.2)+'s';s.style.fontSize=(18+Math.random()*18)+'px';}
+    setTimeout(function(){c.innerHTML='';},4500);
+  }
+  function updFocus(){
+    if(S.cur>=S.games.length)S.cur=Math.max(0,S.games.length-1);
+    $('focusLbl').textContent=(S.cur+1)+'/'+S.games.length+' · '+(S.games[S.cur]?S.games[S.cur].name:'—');
+    $('focusTog').textContent=focusMode?'Vue : jeu en cours':'Vue : tous les jeux';
+  }
   function renderRanking(){
-    var box=$('ranking');box.innerHTML='';
+    var box=$('ranking');var old={};try{Array.prototype.forEach.call(box.children,function(ch){old[ch.getAttribute('data-t')]=ch.getBoundingClientRect().top;});}catch(e){}box.innerHTML='';
     var r=scores().sort(function(a,b){return b.total-a.total||b.wins-a.wins||b.last-a.last;});
     var max=Math.max.apply(null,r.map(function(x){return x.total;}).concat([1]));
     var medals=['🥇','🥈','🥉','4'];
     r.forEach(function(x,k){
       var t=S.teams[x.i];
-      var row=el('div',{className:'rank'},box);
+      var row=el('div',{className:'rank'},box);row.setAttribute('data-t',x.i);
       var bar=el('div',{className:'bar'},row);
       bar.style.width=(x.total/max*100)+'%';bar.style.background=COLORS[x.i];
       el('div',{className:'pos',text:medals[k]},row);
       var mid=el('div',{},row);
-      el('div',{className:'tn',text:t.name},mid);
-      el('div',{className:'pl',text:t.p1+' & '+t.p2+' · '+x.wins+(x.wins>1?' victoires':' victoire')},mid);
-      el('div',{className:'pts',text:x.total+' pts'},row);
+      el('div',{className:'tn',text:(t.emoji?t.emoji+' ':'')+t.name},mid);
+      el('div',{className:'pl',text:t.p1+' & '+t.p2+' · '+x.wins+(x.wins>1?' victoires':' victoire')+(k>0&&r[0].total>x.total?' · −'+(r[0].total-x.total)+' pts du leader':'')+(S.games.some(function(g){return g.joker===x.i;})?' · 🃏 joué':' · 🃏 dispo')},mid);
+      var pe=el('div',{className:'pts',text:x.total+' pts'},row);
+      countUp(pe,prevPts[x.i],x.total);prevPts[x.i]=x.total;flip(row,old[x.i]);
     });
+    var lead=r[0].total>0?r[0].i:-1;
+    if(celebrateOK&&prevLead!==undefined&&lead>=0&&lead!==prevLead)celebrate(lead);
+    prevLead=lead;
+    var ch=champOf(r),done=S.games.length>0&&S.games.every(hasRes);
+    $('champ').textContent=done?'🏁 Terminé ! Champion : '+S.teams[r[0].i].name:(ch>=0?'🔒 '+S.teams[ch].name+' est champion mathématique, plus rattrapable !':'');
+    if(celebrateOK&&done&&!finalShown&&lead>=0){finalShown=true;celebrate(lead,'🏆 '+S.teams[lead].name+' remporte l’ALZ CUP !');}
+    if(!done)finalShown=false;
+  }
+  var finalShown=false;
+  function remMax(t){
+    var bases=[],used=false;
+    S.games.forEach(function(g){
+      if(g.joker===t)used=true;
+      if(hasRes(g))return;
+      var b=g.solo?((+S.baremeSolo[0]||0)+(+S.baremeSolo[1]||0))*g.coef:(+S.bareme[0]||0)*g.coef;
+      bases.push(g.joker===t?b*2:b);
+    });
+    var sum=bases.reduce(function(a,b){return a+b;},0)+bases.length*BET;
+    return sum+(used||!bases.length?0:Math.max.apply(null,bases)/1);
+  }
+  function champOf(r){
+    if(!(r[0].total>0))return -1;
+    var L=r[0];
+    for(var k=1;k<r.length;k++){if(!(L.total>r[k].total+remMax(r[k].i)))return -1;}
+    return L.i;
   }
   function dotFor(parent,i){var d=el('span',{className:'dot'},parent);d.style.background=COLORS[i];d.style.color=COLORS[i];}
 
- function buildTeams(){
-    var box=$('teams');
-    box.innerHTML='';
+  function buildTeams(){
+    var box=$('teams');box.innerHTML='';
     S.teams.forEach(function(t,i){
       var c=el('div',{className:'card'},box);
       var h=el('div',{className:'row'},c);
       dotFor(h,i);
+      var em=el('input',{value:t.emoji||'',placeholder:'😎',maxLength:4},h);em.style.cssText='width:58px;flex:none;text-align:center';em.oninput=function(){t.emoji=em.value;sync();};
       var n=el('input',{value:t.name,placeholder:'Nom de l’équipe'},h);
       n.style.fontWeight='800';
       var a=el('input',{value:t.p1,placeholder:'Joueur A'},c);a.style.marginTop='8px';
@@ -319,26 +383,24 @@ input{min-width:0;width:100%}
       a.oninput=function(){t.p1=a.value;sync();};
       b.oninput=function(){t.p2=b.value;sync();};
     });
-}
- function buildSolo(){
-    var b2=$('baremeSolo');
-    b2.innerHTML='';
+  }
+  function buildSolo(){
+    var b2=$('baremeSolo');b2.innerHTML='';
     PL8.slice(1).forEach(function(p,i){
       var l=el('label',{text:p},b2);
       var inp=el('input',{type:'number',value:S.baremeSolo[i]},l);
       inp.oninput=function(){S.baremeSolo[i]=Number(inp.value)||0;sync();};
     });
-}
- function buildBareme(){
-    var box=$('bareme');
-    box.innerHTML='';
+  }
+  function buildBareme(){
     buildSolo();
+    var box=$('bareme');box.innerHTML='';
     PLACES.slice(1).forEach(function(p,i){
       var l=el('label',{text:p},box);
       var inp=el('input',{type:'number',value:S.bareme[i]},l);
       inp.oninput=function(){S.bareme[i]=Number(inp.value)||0;sync();};
     });
-}
+  }
 
   var gameRefs=[];
   function matchRow(parent,R,g,key,teamsFn,label){
@@ -368,7 +430,7 @@ input{min-width:0;width:100%}
     var box=$('games');box.innerHTML='';gameRefs=[];
     S.games.forEach(function(g,gi){
       var R={bodies:{},names:[],pnames:[],refresh:[],pairOpts:[]};
-      var c=el('div',{className:'card'},box);
+      var c=el('div',{className:'card'},box);R.card=c;R.ttl=el('div',{className:'ttl'},c);R.ttl.onclick=function(){c.classList.toggle('open');};
       var h=el('div',{className:'gh'},c);
       var n=el('input',{value:g.name,placeholder:'Nom du jeu'},h);
       var cs=el('select',{title:'Coefficient'},h);
@@ -376,7 +438,9 @@ input{min-width:0;width:100%}
       n.oninput=function(){g.name=n.value;save();};
       cs.onchange=function(){g.coef=Number(cs.value);sync();};
       var del=el('button',{text:'✕',title:'Supprimer ce jeu'},h);del.style.flex='none';
-      del.onclick=function(){if(confirm('Supprimer « '+(g.name||'ce jeu')+' » ?')){S.games.splice(gi,1);buildGames();sync();}};
+      twice(del,'Sûr ?',function(){S.games.splice(gi,1);buildGames();sync();});
+      var dup=el('button',{text:'⧉',title:'Dupliquer ce jeu'},h);dup.style.flex='none';
+      dup.onclick=function(){var o=JSON.parse(JSON.stringify(g));o.id=uid();o.name=(g.name||'Jeu')+' (copie)';o.places=[0,0,0,0];o.scores=[null,null,null,null];o.sp=z8();o.ss=n8();o.m={};o.bets=[-1,-1,-1,-1];o.joker=-1;o.time='';S.games.splice(gi+1,0,o);S.cur=gi+1;buildGames();sync();};
       var h2=el('div',{className:'gh'},c);
       var ms=el('select',{},h2);ms.style.flex='1';
       MODES.forEach(function(m){var o=el('option',{value:m[0],text:m[1]},ms);if(m[0]===g.mode)o.selected=true;});
@@ -393,17 +457,31 @@ input{min-width:0;width:100%}
       var ts=el('select',{title:'Type de jeu'},h3);ts.style.flex='1';
       [['0','Co-op : on joue en équipe'],['1','Solo : 8 joueurs, chacun pour soi']].forEach(function(m){var o=el('option',{value:m[0],text:m[1]},ts);if((m[0]==='1')===g.solo)o.selected=true;});
       ts.onchange=function(){g.solo=ts.value==='1';sync();};
+      var jk=el('select',{title:'Joker (points ×2)'},h3);jk.style.flex='1';
+      el('option',{value:-1,text:'🃏 Joker : aucun'},jk);
+      R.jkOpts=[0,1,2,3].map(function(i){return el('option',{value:i,text:'🃏 Joker : '+S.teams[i].name},jk);});
+      jk.value=g.joker==null?-1:g.joker;
+      jk.onchange=function(){var v=Number(jk.value);if(v>=0&&S.games.some(function(o){return o!==g&&o.joker===v;})){setNet('⚠ Cette équipe a déjà utilisé son joker.');jk.value=g.joker==null?-1:g.joker;return;}g.joker=v;sync();};
 
-      /* solo : classement des 8 joueurs */
+      var tm=el('input',{type:'time',value:g.time||'',title:'Heure prévue'},h3);tm.style.cssText='flex:none;width:96px';tm.oninput=function(){g.time=tm.value;sync();};
+      /* solo : classement des 8 joueurs (glisser-déposer ou flèches) */
       var bsp=el('div',{},c);R.bodies.sp=bsp;
-      for(var p=0;p<8;p++)(function(p){
-        var l=el('div',{className:'gl'},bsp);
-        dotFor(l,p>>1);
-        R.pnames.push({el:el('span',{},l),p:p});
-        var sel=el('select',{},l);
-        PL8.forEach(function(q,qi){var o=el('option',{value:qi,text:q},sel);if(qi===g.sp[p])o.selected=true;});
-        sel.onchange=function(){g.sp[p]=Number(sel.value);sync();};
-      })(p);
+      var spBox=el('div',{},bsp),dragFrom=-1;
+      function spOrder(){return [0,1,2,3,4,5,6,7].sort(function(x,y){var px=g.sp[x]||99,py=g.sp[y]||99;return px-py||x-y;});}
+      function spMove(from,to){var o=spOrder();if(to<0||to>7||from===to)return;var m=o.splice(from,1)[0];o.splice(to,0,m);o.forEach(function(p,i){g.sp[p]=i+1;});sync();}
+      R.refresh.push(function(){
+        spBox.innerHTML='';
+        spOrder().forEach(function(p,i){
+          var l=el('div',{className:'gl'},spBox);l.style.cssText='grid-template-columns:34px auto 1fr auto;cursor:grab';l.draggable=true;
+          el('b',{text:g.sp[p]?PL8[g.sp[p]]:'—'},l);dotFor(l,p>>1);el('span',{text:pname(p)},l);
+          var ar=el('span',{},l),up=el('button',{text:'▲'},ar),dn=el('button',{text:'▼'},ar);
+          up.style.padding=dn.style.padding='2px 8px';
+          up.onclick=function(){spMove(i,i-1);};dn.onclick=function(){spMove(i,i+1);};
+          l.ondragstart=function(){dragFrom=i;};l.ondragover=function(e){e.preventDefault();};
+          l.ondrop=function(e){e.preventDefault();if(dragFrom>=0)spMove(dragFrom,i);dragFrom=-1;};
+        });
+        var rb=el('button',{text:'Effacer le classement'},spBox);rb.style.marginTop='8px';rb.onclick=function(){g.sp=z8();sync();};
+      });
       /* solo : score / chrono des 8 joueurs */
       var bss=el('div',{},c);R.bodies.ss=bss;
       for(var p2=0;p2<8;p2++)(function(p){
@@ -458,6 +536,11 @@ input{min-width:0;width:100%}
       matchRow(bb,R,g,'f',function(){return bracket(g).f;},'Finale');
       matchRow(bb,R,g,'p',function(){return bracket(g).t;},'Petite finale (3e place)');
 
+      var bd=el('details',{className:'bets'},c);el('summary',{text:'🔮 Pronostics (+'+BET+' pts si juste)'},bd);
+      R.bo=[];
+      S.teams.forEach(function(t,ti){var l=el('div',{className:'gl'},bd);dotFor(l,ti);R.names.push({el:el('span',{},l),t:ti});var bsel=el('select',{},l);
+        [-1,0,1,2,3].forEach(function(v){var o=el('option',{value:v,text:v<0?'—':'→ '+S.teams[v].name},bsel);if(v>=0)R.bo.push([o,v]);if(v===(g.bets||[])[ti])o.selected=true;});
+        bsel.onchange=function(){g.bets=g.bets||[-1,-1,-1,-1];g.bets[ti]=Number(bsel.value);sync();};});
       R.sum=el('div',{className:'sum'},c);
       R.warn=el('div',{className:'warn'},c);
       gameRefs.push(R);
@@ -467,11 +550,17 @@ input{min-width:0;width:100%}
   function sync(){
     S.games.forEach(function(g,gi){
       var R=gameRefs[gi];
+      var done=hasRes(g);
+      R.ttl.textContent=(done?'✅ ':'⏳ ')+(g.name||'Jeu')+(g.solo?' · solo':'')+(g.time?' · '+g.time:'');
+      R.card.classList.toggle('done',done&&!focusMode);
+      R.card.style.display=(focusMode&&gi!==S.cur)?'none':'';
+      (R.bo||[]).forEach(function(x){x[0].text='→ '+S.teams[x[1]].name;});
       var vis=g.solo?(g.smode==='place'?'sp':'ss'):g.mode;
       Object.keys(R.bodies).forEach(function(k){R.bodies[k].style.display=vis===k?'':'none';});
       R.bs.style.display=(!g.solo&&(g.mode==='poule'||g.mode==='bracket'))?'':'none';
       R.ms.style.display=g.solo?'none':'';R.sms.style.display=g.solo?'':'none';
       R.pnames.forEach(function(x){x.el.textContent=pname(x.p);});
+      R.jkOpts.forEach(function(o,i){o.text='🃏 Joker : '+S.teams[i].name;});
       R.names.forEach(function(x){x.el.textContent=S.teams[x.t].name;});
       R.refresh.forEach(function(f){f();});
       SEMI.forEach(function(p,i){
@@ -485,7 +574,7 @@ input{min-width:0;width:100%}
       if(g.solo){
         var sp2=soloPl(g);
         var ord=[0,1,2,3,4,5,6,7].filter(function(p){return sp2[p]>0;}).sort(function(a,b){return sp2[a]-sp2[b];});
-        R.sum.textContent=ord.length?('Joueurs : '+ord.map(function(p){return PL8[sp2[p]]+' '+pname(p)+' (+'+soloPts(g,p)+')';}).join(' · ')+'  —  Équipes : '+[0,1,2,3].map(function(t){return S.teams[t].name+' +'+soloTeamPts(g,t);}).join(' · ')):'';
+        R.sum.textContent=ord.length?('Joueurs : '+ord.map(function(p){return PL8[sp2[p]]+' '+pname(p)+' (+'+soloPts(g,p)+')';}).join(' · ')+'  —  Équipes : '+[0,1,2,3].map(function(t){return S.teams[t].name+' +'+gamePts(g,t)+(g.joker===t?' (joker ×2)':'');}).join(' · ')):'';
         var us=g.smode==='place'?sp2.filter(function(p){return p>0;}):[];
         R.warn.textContent=us.some(function(p,i){return us.indexOf(p)!==i;})?'⚠ Deux joueurs ont la même place':'';
         return;
@@ -497,194 +586,193 @@ input{min-width:0;width:100%}
       var dup=g.mode==='place'&&used.some(function(p,i){return used.indexOf(p)!==i;});
       R.warn.textContent=dup?'⚠ Deux équipes ont la même place':'';
     });
-    renderRanking();save();
+    updFocus();renderRanking();renderExtras();save();
   }
 
+  function hasRes(g){return derive(g).some(function(p){return p>0;});}
+  function playerPts(){var pt=z8();S.games.forEach(function(g){if(g.solo)for(var p=0;p<8;p++)pt[p]+=soloPts(g,p);});return pt;}
+  function sortedTeams(){return scores().sort(function(a,b){return b.total-a.total||b.wins-a.wins||b.last-a.last;});}
+function lastWin(g){var pl=derive(g),w=pl.indexOf(1);return w>=0?' (🥇 '+S.teams[w].name+')':'';}
+function renderBandeau(){
+    var li=-1;S.games.forEach(function(g,i){if(hasRes(g))li=i;});
+    var nx=S.games.filter(function(g){return !hasRes(g);})[0],eta='';
+    if(nx&&nx.time){var m=/^(\d\d):(\d\d)/.exec(nx.time);if(m){var d=new Date();d.setHours(+m[1],+m[2],0,0);var mn=Math.round((d-new Date())/60000);eta=' à '+nx.time+(mn>0?' (dans '+(mn>=60?Math.floor(mn/60)+' h '+(mn%60)+' min':mn+' min')+')':mn>-5?' (c’est l’heure !)':' (en retard)');}}
+    $('bandeau').textContent='Dernier jeu : '+(li>=0?S.games[li].name+lastWin(S.games[li]):'—')+'  ·  Prochain : '+(nx?nx.name+eta:'c’est fini !');
+  }
+  setInterval(function(){renderBandeau();renderPlan(S.games.filter(function(g){return !hasRes(g);})[0]);},30000);
+  function soloWins(){var w={};S.games.forEach(function(g){if(!g.solo)return;var pl=soloPl(g);for(var p=0;p<8;p++)if(pl[p]===1)(w[p]=w[p]||[]).push(g.name);});return w;}
+  var MODL={place:'Classement',score:'Score / chrono',poule:'Poule',bracket:'Tournoi'};
+  function renderPlan(nx){
+    var box=$('plan');box.innerHTML='';
+    S.games.forEach(function(g){
+      var done=hasRes(g),isNext=g===nx;
+      var it=el('div',{className:'pi'+(done?' done':'')+(isNext?' next':'')},box);
+      var t=el('div',{className:'pt'+(g.time?'':' no')},it);
+      t.appendChild(document.createTextNode(g.time||'--:--'));
+      el('small',{text:done?'Terminé':isNext?'Prochain':'À venir'},t);
+      var c=el('div',{className:'pc'},it);
+      el('div',{className:'pn',text:(done?'✅ ':isNext?'🎮 ':'')+(g.name||'Jeu')},c);
+      var m=el('div',{className:'pm'},c);
+      el('span',{className:'tg',text:g.solo?'Solo · 8 joueurs':'Équipes · '+(MODL[g.mode]||'')+((g.mode==='poule'||g.mode==='bracket')?' BO'+g.bo:'')},m);
+      if(g.coef>1)el('span',{className:'tg hot',text:'×'+g.coef+' points'},m);
+      if(g.joker>=0)el('span',{className:'tg hot',text:'🃏 '+S.teams[g.joker].name},m);
+      if(done){var w=derive(g).indexOf(1);if(w>=0)el('span',{className:'tg ok',text:'🥇 '+S.teams[w].name},m);}
+      else if(isNext&&g.time){var mm=/^(\d\d):(\d\d)/.exec(g.time);if(mm){var d=new Date();d.setHours(+mm[1],+mm[2],0,0);var mn=Math.round((d-new Date())/60000);el('span',{className:'tg hot',text:mn>0?'dans '+(mn>=60?Math.floor(mn/60)+' h '+(mn%60)+' min':mn+' min'):mn>-5?'c’est l’heure !':'en retard'},m);}}
+    });
+    if(!S.games.length)box.textContent='Aucun jeu.';
+  }
+  function renderExtras(){
+    var played=S.games.filter(hasRes),li=-1;
+    S.games.forEach(function(g,i){if(hasRes(g))li=i;});
+    var nx=S.games.filter(function(g){return !hasRes(g);})[0];
+    renderBandeau();
+    renderPlan(nx);
+
+    var pb=$('players');pb.innerHTML='';var pt=playerPts();
+    var sw=soloWins(),minPt=Math.min.apply(null,pt),maxPt=Math.max.apply(null,pt),anySolo=S.games.some(function(g){return g.solo&&soloPl(g).some(function(q){return q>0;});});
+    function bdg(p,k){var b=[];if(k===0&&pt[p]>0)b.push('🏆 MVP');if(sw[p])b.push('👑 '+sw[p].slice(0,2).join(', '));if(anySolo&&pt[p]===minPt&&minPt<maxPt)b.push('🥄 Cuillère de bois');return b.length?' · '+b.join(' · '):'';}
+    [0,1,2,3,4,5,6,7].sort(function(a,b){return pt[b]-pt[a]||a-b;}).forEach(function(p,k){
+      var c=el('div',{className:'card'},pb),r=el('div',{className:'row'},c);
+      dotFor(r,p>>1);
+      var m=el('div',{},r);m.style.flex='1';
+      el('div',{className:'tn',text:(k===0&&pt[p]>0?'👑 ':'')+pname(p)},m);
+      el('div',{className:'pl',text:(S.teams[p>>1].emoji||'')+' '+S.teams[p>>1].name+bdg(p,k)},m);
+      el('div',{className:'pts',text:pt[p]},r);
+    });
+
+    var rc=$('recap');rc.innerHTML='';
+    if(!played.length){rc.textContent='Le récapitulatif apparaîtra après le premier jeu.';}
+    else{
+      var tb=el('table',{},rc),hr=el('tr',{},tb);
+      el('th',{text:'Jeu'},hr);S.teams.forEach(function(t){el('th',{text:t.name},hr);});
+      played.forEach(function(g){
+        var tr=el('tr',{},tb),v=[0,1,2,3].map(function(t){return gamePts(g,t)+betPts(g,t);}),mx=Math.max.apply(null,v);
+        el('td',{text:g.name+(g.solo?' (solo)':'')+' ×'+g.coef},tr);
+        v.forEach(function(x,t){el('td',{text:x+(g.joker===t&&x?' 🃏':'')+(betPts(g,t)?' 🔮':''),className:x===mx&&x>0?'mx':''},tr);});
+      });
+      var tt=el('tr',{},tb),sc=scores();
+      el('td',{text:'TOTAL'},tt).style.fontWeight='800';
+      sc.forEach(function(x){el('td',{text:x.total,className:'mx'},tt);});
+    }
+
+    var ch=$('chart');ch.innerHTML='';
+    if(!played.length){ch.textContent='Le graphique apparaîtra après le premier jeu.';return;}
+    var run=[0,0,0,0],ser=[[0],[0],[0],[0]];
+    played.forEach(function(g){[0,1,2,3].forEach(function(t){run[t]+=gamePts(g,t)+betPts(g,t);ser[t].push(run[t]);});});
+    var W=600,H=250,P=28,B=62,N=played.length,mx2=Math.max.apply(null,run.concat([1]));
+    function X(i){return P+i*(W-2*P)/N;}function Y(v){return H-B-v/mx2*(H-P-B);}
+    var s='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto"><line x1="'+P+'" y1="'+(H-B)+'" x2="'+(W-P)+'" y2="'+(H-B)+'" stroke="#a79bd0" stroke-opacity=".4"/>';
+    for(var i=1;i<=N;i++){var nm=(played[i-1].name||'Jeu').slice(0,9).replace(/&/g,'&amp;').replace(/</g,'&lt;');s+='<text x="'+X(i)+'" y="'+(H-B+14)+'" fill="#a79bd0" font-size="11" text-anchor="end" transform="rotate(-40 '+X(i)+' '+(H-B+14)+')">'+nm+'</text>';}
+    ser.forEach(function(a,t){
+      s+='<polyline fill="none" stroke="'+COLORS[t]+'" stroke-width="3" stroke-linejoin="round" points="'+a.map(function(v,i){return X(i)+','+Y(v);}).join(' ')+'"/>';
+      s+='<circle cx="'+X(N)+'" cy="'+Y(a[N])+'" r="5" fill="'+COLORS[t]+'"/>';
+    });
+    ch.innerHTML=s+'</svg>';
+    var lg=el('div',{className:'row'},ch);lg.style.cssText='flex-wrap:wrap;gap:14px;justify-content:center';
+    S.teams.forEach(function(t,i){var l=el('span',{className:'row'},lg);dotFor(l,i);l.appendChild(document.createTextNode(t.name));});
+  }
+
+  twice($('rndBtn'),'Sûr ? Re-clique',function(){
+    var n=[];S.teams.forEach(function(t){n.push(t.p1,t.p2);});
+    for(var i=n.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),x=n[i];n[i]=n[j];n[j]=x;}
+    S.teams.forEach(function(t,i){t.p1=n[2*i];t.p2=n[2*i+1];});
+    buildTeams();sync();
+  });
+var tvIdx=0,tvTimer=null;
+  function tvShow(){var on=document.body.classList.contains('tv');Array.prototype.forEach.call(document.querySelectorAll('[data-s]'),function(e){e.style.display=(on&&Number(e.getAttribute('data-s'))!==tvIdx)?'none':'';});}
+  function tvToggle(on){clearInterval(tvTimer);tvIdx=0;if(on)tvTimer=setInterval(function(){tvIdx=(tvIdx+1)%5;tvShow();},12000);tvShow();}
+  $('undoBtn').onclick=function(){if(!hist.length){setNet('Rien à annuler');return;}S=JSON.parse(hist.pop());norm();lastSnap=JSON.stringify(S);undoing=true;rebuildAll();undoing=false;setNet('↩ Annulé');};
+  $('shareBtn').onclick=function(){
+    var r=sortedTeams(),m=['🥇','🥈','🥉','4️⃣'];
+    var t='🏆 ALZ CUP\n'+r.map(function(x,k){var tm=S.teams[x.i];return m[k]+' '+(tm.emoji||'')+' '+tm.name+' : '+x.total+' pts';}).join('\n');
+    function ok(){setNet('📋 Classement copié !');setTimeout(function(){setNet(okTxt());},2500);}
+    function fb(){var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();try{document.execCommand('copy');ok();}catch(e){setNet('Copie impossible');}document.body.removeChild(a);}
+    try{navigator.clipboard.writeText(t).then(ok,fb);}catch(e){fb();}
+  };
+  $('fPrev').onclick=function(){S.cur=Math.max(0,S.cur-1);sync();};
+  $('fNext').onclick=function(){S.cur=Math.min(S.games.length-1,S.cur+1);sync();};
+  $('focusTog').onclick=function(){focusMode=!focusMode;sync();};
   $('tvBtn').onclick=function(){
     var on=document.body.classList.toggle('tv');
-    $('tvBtn').textContent=on?'Quitter le mode TV':'Mode TV';
+    $('tvBtn').textContent=on?'Quitter le mode TV':'Mode TV';tvToggle(on);
     try{ if(on&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen(); else if(!on&&document.fullscreenElement)document.exitFullscreen(); }catch(e){}
   };
- $('resetBtn').onclick=function(){
-  if(confirm('Tout remettre à zéro (équipes, jeux et résultats) ?')){
-    clearTimeout(saveTimer);
-    try{localStorage.removeItem(KEY);}catch(e){}
-    stateRef.set(def()).then(function(){
-      location.reload();
-    }).catch(function(err){
-      alert('Erreur Firebase : '+err.message);
-    });
-  }
-};
+  twice($('resetBtn'),'Sûr ? Re-clique',function(){S=def();norm();rebuildAll();});
+
   $('addBtn').onclick=function(){
-    S.games.push({name:'Jeu '+(S.games.length+1),mode:'place',coef:1,bo:3,places:[0,0,0,0],scores:[null,null,null,null],low:false,m:{},pair:0,solo:false,smode:'place',sp:z8(),ss:n8()});
-    buildGames();sync();
+    S.games.push({id:uid(),name:'Jeu '+(S.games.length+1),mode:'place',coef:1,bo:3,places:[0,0,0,0],scores:[null,null,null,null],low:false,m:{},pair:0,solo:false,smode:'place',sp:z8(),ss:n8()});
+    S.cur=S.games.length-1;buildGames();sync();
     var k=$('games').children;k[k.length-1].scrollIntoView({behavior:'smooth',block:'center'});
   };
-  window.ALZ_CUP_GET_STATE=function(){return {teams:S.teams,ranking:scores(),completed:S.games.filter(function(g){return derive(g).some(function(p){return p>0;});}).length};};
-  window.ALZ_CUP_REFRESH_FROM_STORAGE=function(){try{var fresh=JSON.parse(localStorage.getItem(KEY));if(fresh&&fresh.teams&&fresh.games)S=fresh;}catch(e){}return window.ALZ_CUP_GET_STATE();};
-  function rebuild(){
-  $('teams').innerHTML='';
-  $('bareme').innerHTML='';
-  $('baremeSolo').innerHTML='';
-  $('games').innerHTML='';
+  rebuildAll();
 
-  buildTeams();
-  buildBareme();
-  buildGames();
-  sync();
-}
-  function showAdmin(user){
-    document.getElementById('firebase-login').style.display=user?'none':'block';
-    document.getElementById('firebase-admin-content').style.display=user?'block':'none';
-  }
-  document.getElementById('firebase-login-btn').onclick=function(){
-    var email=document.getElementById('firebase-email').value.trim();
-    var password=document.getElementById('firebase-password').value;
-    var msg=document.getElementById('firebase-message');
-    msg.textContent='Connexion…';
-    auth.signInWithEmailAndPassword(email,password).catch(function(err){msg.textContent='Connexion impossible : '+err.message;});
-  };
-  document.getElementById('firebase-logout').onclick=function(){auth.signOut();};
-  var isOverlay=new URLSearchParams(location.search).has('overlay');
-  if(isOverlay){document.getElementById('firebase-login').style.display='none';document.getElementById('firebase-admin-content').style.display='none';}
-  auth.onAuthStateChanged(function(user){
-    if(isOverlay)return;
-    showAdmin(user);
-    if(user){
-      document.getElementById('firebase-message').textContent='Connexion réussie. Chargement des données…';
-      stateRef.once('value').then(function(snapshot){
-        var remote=snapshot.val();
-        if(remote){
-  S=normalizeState(remote);
-  rebuild();
-  stateRef.set(S);
-}else{
-  S=normalizeState(S);
-  rebuild();
-  stateRef.set(S);
-}
-ready=true;
-        document.getElementById('firebase-message').textContent='Connecté et synchronisé avec Firebase ✓';
-      }).catch(function(err){document.getElementById('firebase-message').textContent='Erreur de lecture Firebase : '+err.message;});
-    }else{ready=false;}
-  });
-  // L'overlay OBS est en lecture seule : il écoute la base Firebase en temps réel.
-  if(isOverlay){
-    stateRef.on('value',function(snapshot){
-      var remote=snapshot.val();if(!remote)return;
-      applyingRemote=true;S=normalizeState(remote);
-      try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}
-      if(window.ALZ_CUP_REFRESH_FROM_STORAGE)window.ALZ_CUP_REFRESH_FROM_STORAGE();
-      applyingRemote=false;
-      // Le script d'overlay actualise l'affichage à intervalle régulier.
-    },function(err){console.error('Firebase overlay:',err);});
-  }
-  rebuild();
+  /* ---------- synchro en direct (Firebase Firestore + Auth) ---------- */
+  (function(){
+    try{
+      if(!window.firebase){return;}
+      var ADMIN_UID="HFjpcQEbeHNbqP4qR650zdRbxcG2";
+      firebase.initializeApp({
+        apiKey:"AIzaSyDQ6ShueCtCdfOfpfnRxbR9ij12HVRV7Ec",
+        authDomain:"alz-cup-online-5.firebaseapp.com",
+        projectId:"alz-cup-online-5",
+        storageBucket:"alz-cup-online-5.firebasestorage.app",
+        messagingSenderId:"134697377243",
+        appId:"1:134697377243:web:8597b659e0ac74eb7a9bfe"
+      });
+      var db=firebase.firestore(), auth=firebase.auth();
+      var ro=function(){return document.body.classList.contains('ro');};
+      document.body.classList.add('ro');
+      var c=db.collection('alzcup_live');
+      var lb=document.getElementById('loginBtn');
+
+      auth.onAuthStateChanged(function(u){
+        var admin=!!u&&u.uid===ADMIN_UID;
+        document.body.classList.toggle('ro',!admin);
+        lb.textContent=admin?'🔓 Se déconnecter':'🔐 Admin';
+        setNet(okTxt());
+        if(admin&&col&&ready)push();
+      });
+      lb.onclick=function(){
+        if(auth.currentUser){auth.signOut();return;}
+        var em=prompt('Email admin :');if(!em)return;
+        var pw=prompt('Mot de passe :');if(!pw)return;
+        auth.signInWithEmailAndPassword(em,pw).catch(function(){setNet('🟠 Connexion refusée');});
+      };
+
+      c.onSnapshot(function(snap){
+        if(!ready){
+          if(snap.empty){
+            if(snap.metadata&&snap.metadata.fromCache)return;
+            col=c;ready=true;known={};
+            if(!ro())push();else setNet('👀 En attente des données…');
+            return;
+          }
+          col=c;ready=true;
+        }
+        var meta=null,upd={},rem={},touched=false;
+        snap.docChanges().forEach(function(x){
+          var id=x.doc.id,j=(x.doc.data()||{}).json;
+          if(x.type==='removed'){delete known[id];if(id.indexOf('g_')===0){rem[id.slice(2)]=1;touched=true;}return;}
+          if(!j||known[id]===j)return;
+          var o;try{o=JSON.parse(j);}catch(e){return;}
+          known[id]=j;touched=true;
+          if(id==='meta')meta=o;else if(id.indexOf('g_')===0)upd[id.slice(2)]=o;
+        });
+        if(!touched){setNet(okTxt());return;}
+        if(meta){S.teams=meta.teams;S.bareme=meta.bareme;S.baremeSolo=meta.baremeSolo;S.cur=meta.cur||0;}
+        var cur={};S.games.forEach(function(g){cur[g.id]=g;});
+        Object.keys(upd).forEach(function(id){cur[id]=upd[id];});
+        Object.keys(rem).forEach(function(id){if(!upd[id])delete cur[id];});
+        var order=meta?meta.order.slice():S.games.map(function(g){return g.id;});
+        Object.keys(upd).forEach(function(id){if(order.indexOf(id)<0)order.push(id);});
+        S.games=order.filter(function(id){return cur[id];}).map(function(id){return cur[id];});
+        norm();
+        applying=true;keepFocus(rebuildAll);applying=false;
+        setNet(okTxt());
+      },function(){setNet('🟠 Synchro indisponible');});
+    }catch(e){}
+  })();
 })();
 </script>
-
-<style id="alz-live-overlay-style">
-/* ALZ CUP LIVE — panneau bandeau ancré à gauche, fond transparent */
-body.alz-overlay{background:transparent!important;min-height:100vh!important;overflow:hidden!important;margin:0!important;padding:0!important}
-body.alz-overlay main{display:none!important}
-#alz-live-overlay{display:none;position:fixed;left:20px;top:20px;transform:none;width:clamp(230px,20vw,310px);padding:10px;color:#f4f1ff;font-family:Rubik,Arial,sans-serif;border:1px solid rgba(190,90,255,.78);border-radius:18px;background:linear-gradient(145deg,rgba(8,3,25,.94),rgba(28,8,57,.88));box-shadow:0 0 26px rgba(166,60,255,.36),inset 0 0 26px rgba(166,60,255,.12);backdrop-filter:blur(8px);overflow:hidden}
-body.alz-overlay #alz-live-overlay{display:block}
-.alz-ov-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 2px 8px;border-bottom:1px solid rgba(166,60,255,.5)}
-.alz-ov-brand{font-family:'Permanent Marker',cursive;font-size:23px;line-height:1;text-shadow:0 0 12px #a63cff;white-space:nowrap}.alz-ov-brand span{color:#ff2bd6}
-.alz-ov-sub{font-size:8px;letter-spacing:1.5px;color:#c4b4e8;text-transform:uppercase;text-align:right;line-height:1.5}
-.alz-ov-label{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:#d9c9ff;margin:11px 2px 7px}
-.alz-ov-row{display:grid;grid-template-columns:26px minmax(0,1fr) auto;align-items:center;gap:6px;padding:6px 7px;margin-top:5px;border:1px solid rgba(166,60,255,.34);border-radius:10px;background:linear-gradient(90deg,rgba(45,20,78,.9),rgba(18,8,40,.82));position:relative;overflow:hidden;animation:alz-band-in .45s ease both}
-.alz-ov-row:first-child{border-color:rgba(255,179,0,.8);box-shadow:0 0 15px rgba(255,179,0,.2)}
-.alz-ov-pos{font-size:16px;font-weight:800;text-align:center}.alz-ov-team{font-size:11px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.alz-ov-players{font-size:8px;color:#b9add7;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.alz-ov-pts{font-family:'Permanent Marker',cursive;font-size:16px;color:#ff63e4;text-shadow:0 0 10px #a63cff;white-space:nowrap}
-.alz-ov-foot{display:flex;justify-content:space-between;gap:6px;margin-top:7px;font-size:8px;color:#c1b1e3;text-transform:uppercase;letter-spacing:.8px}
-.alz-ov-live{color:#ff65df;white-space:nowrap}.alz-ov-live:before{content:'';display:inline-block;width:7px;height:7px;border-radius:50%;background:#ff2bd6;box-shadow:0 0 8px #ff2bd6;margin-right:6px;animation:alz-pulse 1.2s infinite}
-.alz-ov-ticker{margin:8px -10px -10px;padding:6px 0;background:linear-gradient(90deg,rgba(166,60,255,.95),rgba(255,43,214,.95),rgba(45,123,255,.95));overflow:hidden;white-space:nowrap}
-.alz-ov-ticker-track{display:inline-block;min-width:max-content;padding-left:100%;font-size:8px;font-weight:800;letter-spacing:1.4px;color:white;text-transform:uppercase;animation:alz-marquee 22s linear infinite}
-.alz-ov-ticker-track span{padding-right:34px}
-@keyframes alz-marquee{from{transform:translateX(0)}to{transform:translateX(-100%)}}
-@keyframes alz-band-in{from{opacity:.35;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
-@keyframes alz-pulse{50%{opacity:.35}}
-body.alz-overlay.alz-vertical #alz-live-overlay{left:14px;top:14px;transform:none;width:clamp(220px,28vw,290px);padding:9px}
-body.alz-overlay.alz-vertical .alz-ov-brand{font-size:22px}
-@media(max-width:700px){#alz-live-overlay{left:10px;top:10px;width:min(260px,48vw);padding:8px}.alz-ov-row{grid-template-columns:23px minmax(0,1fr) auto;padding:6px 5px}.alz-ov-team{font-size:10px}.alz-ov-players{font-size:7px}.alz-ov-pts{font-size:14px}.alz-ov-ticker{margin:7px -8px -8px;padding:5px 0}}
-/* OBS : page entièrement transparente */
-html:has(body.alz-overlay),
-body.alz-overlay {
-  background: transparent !important;
-  background-color: transparent !important;
-}
-
-body.alz-overlay {
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
-}
-
-/* Masquer tout le site sauf le tableau des scores */
-body.alz-overlay main {
-  display: none !important;
-}
-
-/* Tableau en haut à gauche, sans grand panneau opaque */
-#alz-live-overlay {
-  display: block !important;
-  position: fixed !important;
-  top: 15px !important;
-  left: 15px !important;
-  width: 300px !important;
-  background: transparent !important;
-  background-color: transparent !important;
-  background-image: none !important;
-  box-shadow: none !important;
-  backdrop-filter: none !important;
-  border: none !important;
-}
-</style>
-<div id="alz-live-overlay" aria-label="Classement ALZ CUP en direct">
- <div class="alz-ov-head"><div class="alz-ov-brand">ALZ <span>CUP</span></div><div class="alz-ov-sub">Classement général<br>Week-end gaming</div></div>
- <div id="alz-ov-ranking"></div>
- <div class="alz-ov-foot"><span class="alz-ov-live">Scores en direct</span><span id="alz-ov-progress">0 jeu terminé</span></div>
- <div class="alz-ov-ticker"><div class="alz-ov-ticker-track" id="alz-ov-ticker"><span>ALZ CUP · CLASSEMENT GÉNÉRAL · SCORES EN DIRECT · ALZ HOUSE</span><span>ALZ CUP · CLASSEMENT GÉNÉRAL · SCORES EN DIRECT · ALZ HOUSE</span></div></div>
-</div>
-<script id="alz-live-overlay-script">
-(function(){
- const params=new URLSearchParams(location.search);
- if(!params.has('overlay')) return;
- document.body.classList.add('alz-overlay');
- if(params.get('layout')==='vertical') document.body.classList.add('alz-vertical');
- const target=document.getElementById('alz-ov-ranking');
- const medals=['🥇','🥈','🥉','4'];
- function refreshOverlay(){
-   try{
-     if(!window.ALZ_CUP_REFRESH_FROM_STORAGE) return;
-     const state=window.ALZ_CUP_REFRESH_FROM_STORAGE();
-     if(!state||!state.teams||!state.ranking) return;
-     // Le classement utilise exactement le même calcul que le tableau de gestion.
-     const list=state.ranking.sort((a,b)=>b.total-a.total||b.wins-a.wins||b.last-a.last);
-     target.innerHTML='';
-     list.forEach((entry,index)=>{
-       const team=state.teams[entry.i];
-       const row=document.createElement('div'); row.className='alz-ov-row';
-       const pos=document.createElement('div'); pos.className='alz-ov-pos'; pos.textContent=medals[index];
-       const info=document.createElement('div');
-       const name=document.createElement('div'); name.className='alz-ov-team'; name.textContent=team.name;
-       const players=document.createElement('div'); players.className='alz-ov-players'; players.textContent=team.p1+' & '+team.p2+' · '+entry.wins+' victoire(s)';
-       const pts=document.createElement('div'); pts.className='alz-ov-pts'; pts.textContent=entry.total+' PTS';
-       info.append(name,players); row.append(pos,info,pts); target.appendChild(row);
-     });
-     document.getElementById('alz-ov-progress').textContent=state.completed+' jeu(x) avec résultat';
-     const ticker=document.getElementById('alz-ov-ticker');
-     ticker.innerHTML='';
-     const summary=list.map(function(entry,index){return (index+1)+'E '+state.teams[entry.i].name+' : '+entry.total+' POINTS';}).join('  ✦  ');
-     [summary+'  ✦  ALZ CUP · SCORES EN DIRECT',summary+'  ✦  ALZ CUP · SCORES EN DIRECT'].forEach(function(line){const span=document.createElement('span');span.textContent=line;ticker.appendChild(span);});
-   }catch(e){/* garde l'overlay affichable même si les données sont momentanément indisponibles */}
- }
- // L'overlay et le tableau de gestion partagent le stockage du même fichier HTML.
- refreshOverlay(); setInterval(refreshOverlay,1000);
- window.addEventListener('storage',refreshOverlay);
-})();
-</script>
-
 </body>
 </html>
