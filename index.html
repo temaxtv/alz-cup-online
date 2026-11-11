@@ -288,14 +288,19 @@ input{min-width:0;width:100%}
       b.oninput=function(){t.p2=b.value;sync();};
     });
   }
-  function buildSolo(){
-    var b2=$('baremeSolo');
-    PL8.slice(1).forEach(function(p,i){
-      var l=el('label',{text:p},b2);
-      var inp=el('input',{type:'number',value:S.baremeSolo[i]},l);
-      inp.oninput=function(){S.baremeSolo[i]=Number(inp.value)||0;sync();};
-    });
-  }
+ function buildSolo(){
+  var b2=$('baremeSolo');
+  b2.innerHTML='';
+
+  PL8.slice(1).forEach(function(p,i){
+    var l=el('label',{text:p},b2);
+    var inp=el('input',{type:'number',value:S.baremeSolo[i]},l);
+    inp.oninput=function(){
+      S.baremeSolo[i]=Number(inp.value)||0;
+      sync();
+    };
+  });
+}
   function buildBareme(){
     buildSolo();
     var box=$('bareme');
