@@ -473,8 +473,10 @@ input{min-width:0;width:100%}
   };
   $('resetBtn').onclick=function(){
     if(confirm('Tout remettre à zéro (équipes, jeux et résultats) ?')){
-      try{localStorage.removeItem(KEY);}catch(e){}
-      location.reload();
+      clearTimeout(saveTimer);
+      S=def();
+      rebuild();
+      save();
     }
   };
 
