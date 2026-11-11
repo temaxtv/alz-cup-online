@@ -555,9 +555,16 @@ input{min-width:0;width:100%}
       document.getElementById('firebase-message').textContent='Connexion réussie. Chargement des données…';
       stateRef.once('value').then(function(snapshot){
         var remote=snapshot.val();
-        if(remote){S=normalizeState(remote);rebuild();}
-        else {S=normalizeState(S);rebuild();stateRef.set(S);}
-        ready=true;
+        if(remote){
+  S=normalizeState(remote);
+  rebuild();
+  stateRef.set(S);
+}else{
+  S=normalizeState(S);
+  rebuild();
+  stateRef.set(S);
+}
+ready=true;
         document.getElementById('firebase-message').textContent='Connecté et synchronisé avec Firebase ✓';
       }).catch(function(err){document.getElementById('firebase-message').textContent='Erreur de lecture Firebase : '+err.message;});
     }else{ready=false;}
