@@ -608,22 +608,37 @@ body.alz-overlay #alz-live-overlay{display:block}
 body.alz-overlay.alz-vertical #alz-live-overlay{left:14px;top:14px;transform:none;width:clamp(220px,28vw,290px);padding:9px}
 body.alz-overlay.alz-vertical .alz-ov-brand{font-size:22px}
 @media(max-width:700px){#alz-live-overlay{left:10px;top:10px;width:min(260px,48vw);padding:8px}.alz-ov-row{grid-template-columns:23px minmax(0,1fr) auto;padding:6px 5px}.alz-ov-team{font-size:10px}.alz-ov-players{font-size:7px}.alz-ov-pts{font-size:14px}.alz-ov-ticker{margin:7px -8px -8px;padding:5px 0}}
-/* Fond totalement transparent, scores conservés */
+/* OBS : page entièrement transparente */
+html:has(body.alz-overlay),
+body.alz-overlay {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+
+body.alz-overlay {
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Masquer tout le site sauf le tableau des scores */
+body.alz-overlay main {
+  display: none !important;
+}
+
+/* Tableau en haut à gauche, sans grand panneau opaque */
 #alz-live-overlay {
-  background: rgba(0,0,0,0) !important;
+  display: block !important;
+  position: fixed !important;
+  top: 15px !important;
+  left: 15px !important;
+  width: 300px !important;
+  background: transparent !important;
+  background-color: transparent !important;
   background-image: none !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
-}
-
-.alz-ov-row {
-  background: rgba(0,0,0,0) !important;
-  background-image: none !important;
-}
-
-.alz-ov-ticker {
-  background: rgba(0,0,0,0) !important;
-  background-image: none !important;
+  border: none !important;
 }
 </style>
 <div id="alz-live-overlay" aria-label="Classement ALZ CUP en direct">
