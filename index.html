@@ -299,19 +299,14 @@ input{min-width:0;width:100%}
     });
 }
  function buildBareme(){
-  var box=$('bareme');
-  box.innerHTML='';
-
-  buildSolo();
-
-  PLACES.slice(1).forEach(function(p,i){
-    var l=el('label',{text:p},box);
-    var inp=el('input',{type:'number',value:S.bareme[i]},l);
-    inp.oninput=function(){
-      S.bareme[i]=Number(inp.value)||0;
-      sync();
-    };
-  });
+    var box=$('bareme');
+    box.innerHTML='';
+    buildSolo();
+    PLACES.slice(1).forEach(function(p,i){
+      var l=el('label',{text:p},box);
+      var inp=el('input',{type:'number',value:S.bareme[i]},l);
+      inp.oninput=function(){S.bareme[i]=Number(inp.value)||0;sync();};
+    });
 }
 
   var gameRefs=[];
