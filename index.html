@@ -485,15 +485,17 @@ input{min-width:0;width:100%}
     $('tvBtn').textContent=on?'Quitter le mode TV':'Mode TV';
     try{ if(on&&document.documentElement.requestFullscreen)document.documentElement.requestFullscreen(); else if(!on&&document.fullscreenElement)document.exitFullscreen(); }catch(e){}
   };
-  $('resetBtn').onclick=function(){
-    if(confirm('Tout remettre à zéro (équipes, jeux et résultats) ?')){
-      clearTimeout(saveTimer);
-      S=def();
-      rebuild();
-      save();
-    }
-  };
-
+ $('resetBtn').onclick=function(){
+  if(confirm('Tout remettre à zéro (équipes, jeux et résultats) ?')){
+    clearTimeout(saveTimer);
+    try{localStorage.removeItem(KEY);}catch(e){}
+    stateRef.set(def()).then(function(){
+      location.reload();
+    }).catch(function(err){
+      alert('Erreur Firebase : '+err.message);
+    });
+  }
+};
   $('addBtn').onclick=function(){
     S.games.push({name:'Jeu '+(S.games.length+1),mode:'place',coef:1,bo:3,places:[0,0,0,0],scores:[null,null,null,null],low:false,m:{},pair:0,solo:false,smode:'place',sp:z8(),ss:n8()});
     buildGames();sync();
