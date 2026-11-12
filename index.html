@@ -165,19 +165,19 @@ details.bets{margin-top:10px;color:var(--mut);font-size:14px}details.bets summar
   var COLORS=['#a63cff','#ff2bd6','#2d7bff','#ffb300'];
   var PLACES=['—','1er','2e','3e','4e'];
   var PL8=['—','1er','2e','3e','4e','5e','6e','7e','8e'];
-  var SOLO=['Among Us','Fall Guys','Trackmania'];
+  var SOLO=['AMONG US','FALL GUYS','TRACKMANIA'];
   function z8(){return [0,0,0,0,0,0,0,0];}
   function n8(){return [null,null,null,null,null,null,null,null];}
   var MODES=[['place','Classement (1er → 4e)'],['score','Score / chrono'],['poule','Poule en BO (tous contre tous)'],['bracket','Tournoi en BO (demies + finale)']];
   var PAIRS=[[0,1],[2,3],[0,2],[1,3],[0,3],[1,2]];
   var SEMI=[[[0,1],[2,3]],[[0,2],[1,3]],[[0,3],[1,2]]];
   function def(){
-    var g=[['Mario Kart','place',1,3],['Rocket League','bracket',1,3],['Battle royale','place',1,3],['Trackmania','score',1,3],['Among Us','place',1,3],['Fall Guys','place',1,3],['Mini-jeux party','place',1,3],['Foot 2v2','poule',1,1],['Jeu de tir','score',1,3],['Jeu de course','place',1,3],['Jeu de réflexion','score',1,3],['Jeu 10','place',1,3],['Jeu 11','place',1,3],['Jeu 12','place',1,3],['Finale','bracket',2,5]];
+    var g=[['VALORANT','place',1,3],['FORTNITE/JEU D\'ARMES','place',1,3],['ROCKET LEAGUE','bracket',1,3],['FALL GUYS','place',1,3],['FIFA 27','poule',1,1],['MECHA CAMELEON','place',1,3],['AMONG US','place',1,3],['MARIO KART','place',1,3],['TRACKMANIA','score',1,3],['MINECRAFT','place',1,3],['BRAWL STARS','place',1,3],['ROLLER CHAMPIONS','place',1,3],['MIMIC PARTY','place',1,3],['OVERWATCH 2','place',1,3],['Finale','bracket',2,5]];
     return {
       teams:[{name:'Équipe 1',p1:'Joueur 1',p2:'Joueur 2'},{name:'Équipe 2',p1:'Joueur 3',p2:'Joueur 4'},{name:'Équipe 3',p1:'Joueur 5',p2:'Joueur 6'},{name:'Équipe 4',p1:'Joueur 7',p2:'Joueur 8'}],
       bareme:[10,6,3,1],
       baremeSolo:[10,8,6,5,4,3,2,1],
-      games:g.map(function(x){return {name:x[0],mode:x[1],coef:x[2],bo:x[3],places:[0,0,0,0],scores:[null,null,null,null],low:x[0]==='Trackmania',m:{},pair:0,solo:SOLO.indexOf(x[0])>=0,smode:x[0]==='Trackmania'?'score':'place',sp:z8(),ss:n8()};})
+      games:g.map(function(x){return {name:x[0],mode:x[1],coef:x[2],bo:x[3],places:[0,0,0,0],scores:[null,null,null,null],low:x[0]==='TRACKMANIA',m:{},pair:0,solo:SOLO.indexOf(x[0])>=0,smode:x[0]==='TRACKMANIA'?'score':'place',sp:z8(),ss:n8()};})
     };
   }
   var S;
