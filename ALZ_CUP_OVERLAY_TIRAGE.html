@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ALZ CUP – Overlay tirage</title>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Rubik:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--pur:#a63cff;--mag:#ff2bd6;--blu:#2d7bff;--yel:#ffb300;--mut:#c9b9ed}
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:transparent}
+body{font-family:Rubik,system-ui,sans-serif;color:#fff}
+#wrap{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(900px,94vw);text-align:center;opacity:1;transition:opacity .35s}
+#wrap.idle{opacity:0}
+.kicker{font-family:'Permanent Marker',cursive;font-style:italic;font-size:clamp(17px,2.3vw,28px);color:#fff;text-shadow:0 0 12px var(--blu),0 0 24px var(--pur);margin-bottom:8px}
+#panel{position:relative;padding:24px 34px 26px;border:2px solid rgba(166,60,255,.9);border-radius:24px;background:linear-gradient(135deg,rgba(7,3,26,.94),rgba(25,7,54,.91));box-shadow:0 0 18px rgba(166,60,255,.75),0 0 48px rgba(255,43,214,.3),inset 0 0 28px rgba(45,123,255,.18);overflow:hidden}
+#panel:before{content:'';position:absolute;inset:0;background:linear-gradient(110deg,transparent 15%,rgba(255,255,255,.09) 48%,transparent 75%);transform:translateX(-110%);animation:shine 4s ease-in-out infinite}
+@keyframes shine{0%,55%{transform:translateX(-110%)}85%,100%{transform:translateX(110%)}}
+.crown{font-size:clamp(30px,4vw,48px);filter:drop-shadow(0 0 12px var(--yel));margin-bottom:2px}
+.label{font-size:clamp(13px,1.6vw,18px);font-weight:800;letter-spacing:.22em;color:var(--mut);text-transform:uppercase}
+#game{position:relative;z-index:1;font-family:'Permanent Marker',cursive;font-style:italic;font-size:clamp(34px,6vw,76px);line-height:1.08;margin:14px 0 8px;overflow-wrap:anywhere;text-shadow:0 0 10px var(--mag),0 0 25px var(--pur),0 0 42px var(--blu)}
+#sub{font-size:clamp(12px,1.5vw,17px);color:var(--mut);letter-spacing:.08em}
+#panel.spin #game{color:#c7b8e8;filter:blur(1px);animation:flicker .12s linear infinite alternate}
+@keyframes flicker{from{opacity:.62;transform:scale(.99)}to{opacity:1;transform:scale(1.01)}}
+#panel.pop{animation:pop .65s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{from{transform:scale(.84)}to{transform:scale(1)}}
+#panel.pop #game{color:#fff}
+@media(max-width:600px){#panel{padding:18px 18px 20px;border-radius:18px}}
+</style>
+</head>
+<body>
+<div id="wrap" class="idle"><div class="kicker">👑 ALZ CUP · LE TIRAGE AU SORT</div><div id="panel"><div class="crown">🏆</div><div class="label">Le prochain jeu sera...</div><div id="game">En attente du tirage</div><div id="sub">La compétition va bientôt commencer</div></div></div>
+<script>
+(function(){
+  var firebaseConfig={apiKey:"AIzaSyDQ6ShueCtCdfOfpfnRxbR9ij12HVRV7Ec",authDomain:"alz-cup-online-5.firebaseapp.com",projectId:"alz-cup-online-5",storageBucket:"alz-cup-online-5.firebasestorage.app",messagingSenderId:"134697377243",appId:"1:134697377243:web:8597b659e0ac74eb7a9bfe"};
+  try{firebase.initializeApp(firebaseConfig);}catch(e){}
+  var db=firebase.firestore(),lastId=null,timer=null;
+  var wrap=document.getElementById('wrap'),panel=document.getElementById('panel'),game=document.getElementById('game'),sub=document.getElementById('sub');
+  function finish(d){clearTimeout(timer);panel.classList.remove('spin');panel.classList.remove('pop');game.textContent=d.game||'—';sub.textContent='LISTE : '+(d.list||'ALZ CUP')+' · LE SORT EN EST JETÉ !';void panel.offsetWidth;panel.classList.add('pop');wrap.classList.remove('idle');}
+  function animate(d,all){clearTimeout(timer);wrap.classList.remove('idle');panel.classList.remove('pop');panel.classList.add('spin');sub.textContent='LE TIRAGE EST EN COURS…';var names=(all||[]).map(function(x){return x.game;}).filter(Boolean);if(!names.length)names=[d.game];var i=0,steps=34;function tick(){if(i>=steps){finish(d);return;}game.textContent=names[Math.floor(Math.random()*names.length)];i++;timer=setTimeout(tick,45+Math.pow(i/steps,3)*420);}tick();}
+  db.collection('alzcup_live').doc('meta').onSnapshot(function(doc){if(!doc.exists)return;var m=doc.data()||{},draws=m.json?JSON.parse(m.json).draws||[]:[];if(!draws.length)return;var d=draws[0];if(!d||!d.id||d.id===lastId)return;lastId=d.id;var fresh=Math.abs(Date.now()-(d.ts||0))<30000;if(fresh)animate(d,draws);else finish(d);},function(){sub.textContent='Connexion à la compétition…';});
+})();
+</script>
+</body>
+</html>
