@@ -219,7 +219,7 @@ button:disabled{opacity:.45;cursor:default;box-shadow:none}
     var g=[];
     return {
       teams:[{name:'Équipe 1',p1:'Joueur 1',p2:'Joueur 2'},{name:'Équipe 2',p1:'Joueur 3',p2:'Joueur 4'},{name:'Équipe 3',p1:'Joueur 5',p2:'Joueur 6'},{name:'Équipe 4',p1:'Joueur 7',p2:'Joueur 8'}],
-      bareme:[10,6,3,1],
+      bareme:[10,7,4,2],
       baremeSolo:[10,8,6,5,4,3,2,1],
       games:g.map(function(x){return {name:x[0],mode:x[1],coef:x[2],bo:x[3],places:[0,0,0,0],scores:[null,null,null,null],low:x[0]==='TRACKMANIA',m:{},pair:0,solo:SOLO.indexOf(x[0])>=0,smode:x[0]==='TRACKMANIA'?'score':'place',sp:z8(),ss:n8()};})
     };
